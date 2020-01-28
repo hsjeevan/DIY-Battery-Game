@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    canvas {
+      border: 1px solid #d3d3d3;
+      background-color: #f1f1f1;
+    }
+
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body onload="startGame()">
+  <script>
+    var myComponents = [];
+    var updateArr = [];
+    var clickedObj = new component;
+    var ConnectedLED = 'ConnectedLED'
+    var GlowingLED = 'GlowingLED'
+    var wrappedMg = 'wrappedMg';
+    var cell = 'cell';
+    var battery = 'battery'
+    var copper = 'copper'
+    var mg = 'magnesium'
+    var separator = 'filterPaper'
+    var LED = 'LED'
+    var citricAcid = 'citricAcid';
+    var expectedArray = [mg, separator, copper, mg, separator, copper, cell, LED, citricAcid]
+
+    var myLED;
+    var myBackground;
+    var myMagnesium;
+    var myCitricAcid;
+    var filterPaper;
+    var coperStrip;
+    var coperStrip1;
+    var myGameArea;
+    var myInstructions;
+    var myInivsibleWA;
+    var expectedItem;
+    var previouslyClicked;
+    var iterator = 0;
+
+
+
+    function startGame() {
+      myBackground = new component(800, 500, "BG.jpg", 0, 0, "image", null, null, null);
+      myWorkArea = new component(250, 150, "gray", 276, 283, "rect", null, null, 0.7);
+      myInivsibleWA = new component(180, 100, "none", 60, 315, "rect", null, null, 0);
+
+
+      coperStrip = new component(150, 10, "coperstrip.png", 571, 365, "image", copper, false, null);
+      coperStrip1 = new component(150, 10, "coperstrip.png", 586, 385, "image", copper, false, null);
+
+      myMagnesium = new component(150, 10, "magnesium.png", 605, 410, "image", mg, true, null);
+      myMagnesium1 = new component(150, 10, "magnesium.png", 620, 430, "image", mg, true, null);
+
+      filterPaper = new component(30, 50, "filterPaper.png", 589, 310, "image", separator, false, null);
+      filterPaper1 = new component(30, 50, "filterPaper.png", 630, 310, "image", separator, false, null);
+
+      myLED = new component(60, 90, "LED1.png", 580, 235, "image", LED, false, null);
+      myCitricAcid = new component(40, 70, "citricAcid.png", 650, 235, "image", citricAcid, false, null);
+
+      myInstructions = new textComponent('18px normal', 'consolas', 'white', myBackground.width / 2, 470);
+      myGameArea.start();
+    }
+
+    var myGameArea = {
+      canvas: document.createElement("canvas"),
+      start: function () {
+        this.canvas.width = myBackground.width;
+        this.canvas.height = myBackground.height;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 20);
+      },
+      clear: function () {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      },
+      stop: function () {
+        clearInterval(this.interval);
+      }
+    };
+
+    function component(width, height, color, x, y, type, contains, isExpected, visibility) {
+
+      this.type = type;
+      if (type == "image") {
+        this.image = new Image();
+        this.image.src = color;
+      }
+      this.width = width;
+      this.height = height;
+
+      this.contains = contains;
+      this.isExpected = isExpected;
+
+      this.x = x;
+      this.y = y;
+
+      this.initialX = x;
+      this.initialY = y;
+      this.initialImage = color;
+
+      this.update = function () {
+        ctx = myGameArea.context;
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 5;
+        ctx.shadowColor = "black";
+        if (type == "image") {
+          ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+        } else {
+          ctx.beginPath();
+          ctx.save();
+          ctx.globalAlpha = visibility;
+          ctx.strokeStyle = color;
+          ctx.rect(this.x, this.y, this.width, this.height);
+          ctx.stroke();
+          ctx.restore();
+        }
+      };
+
+      this.crashWith = function (otherobj) {
+        var currObj = this;
+        var myleft = currObj.x;
+        var myright = currObj.x + currObj.width;
+        var mytop = currObj.y;
+        var mybottom = currObj.y + currObj.height;
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + otherobj.width;
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + otherobj.height;
+        
+        var crash = true;
+
+        if (mybottom < othertop || mytop > otherbottom || myright < otherleft || myleft > otherright) {
+          crash = false;
+        }
+        return crash;
+      };
+      // myComponents.push(this);
+      updateArr.push(this);
+    }
+
+    function textComponent(size, fontFamily, color, x, y) {
+      this.text = 'Step 1: Drop magnesium on the work area';
+      this.x = x;
+      this.y = y;
+      this.color = color;
+      this.size = size;
+      this.fontFamily = fontFamily;
+      this.update = function () {
+        ctx = myGameArea.context;
+        ctx.save();
+        ctx.font = this.size + " " + this.fontFamily;
+        ctx.fillStyle = color;
+        ctx.textAlign = "center";
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+
+    function checkFocus(event, obj) {
+      var myleft = obj.x;
+      var myright = obj.x + (obj.width);
+      var mytop = obj.y;
+      var mybottom = obj.y + (obj.height);
+      var clicked = true;
+      if ((mybottom < event.clientY) || (mytop > event.clientY) || (myright < event.clientX) || (myleft > event.clientX)) {
+        clicked = false;
+      }
+      return clicked;
+    }
+
+
+    myGameArea.canvas.addEventListener('mousedown', mousedown);
+    function mousedown(event) {
+      updateArr.forEach(element => {
+        if (checkFocus(event, element)) {
+          clickedObj = element;
+          myGameArea.canvas.style.cursor = 'none'
+          // }
+          // else
+          if (element.isExpected === null) { }
+          // else
+          // myGameArea.canvas.style.cursor = 'not-allowed';
+          myGameArea.canvas.addEventListener('mousemove', mousemove)
+          myGameArea.canvas.addEventListener('mouseup', mouseup);
+        }
+      });
+    }
+
+    function mouseup(event) {
+
+      myGameArea.canvas.style.cursor = 'default'
+      myGameArea.canvas.removeEventListener('mousemove', mousemove)
+      myGameArea.canvas.removeEventListener('mouseup', mouseup)
+
+      gameLogic();
+    }
+
+    function mousemove(event) {
+      myGameArea.x = event.pageX;
+      myGameArea.y = event.pageY;
+      if (checkFocus(event, myCitricAcid) && myCitricAcid.crashWith(myWorkArea) && iterator === 8) {
+        myCitricAcid.image.src = 'citricAcidTilted.png'
+      }
+    }
+
+
+    function gameLogic() {
+      console.log(iterator);
+
+      if (clickedObj) {
+        if (clickedObj.crashWith(myWorkArea)) { //dragged object into work area
+          setMidPosition(clickedObj, myWorkArea);
+          if (clickedObj.contains === expectedArray[iterator]) { //clicked expected object
+            //logic area
+            if (iterator < expectedArray.length) {
+              markExpected(expectedArray[iterator + 1], true);
+              if (iterator === 0 || iterator === 3) {
+                myInstructions.text = `Step ${iterator + 1}: Wrap the Magnesium strip with filter paper by dropping it over the game area.`;
+                // log(clickedObj, previouslyClicked, expectedArray[iterator + 1])
+              }
+
+              else if (iterator !== 3) {
+                clickedObj.isMoved = true;
+                log(clickedObj, previouslyClicked)
+              }
+              else {
+                myInstructions.text = `Step ${iterator + 1}: Drop magnesium on the work area.`;
+              }
+              previouslyClicked = clickedObj;
+              iterator++;
+            }
+          }
+          else { // clicked object other than expected obj
+            if (clickedObj.isMoved != true) {
+              restorePosition(clickedObj);
+            }
+
+          }
+        }
+        else if (clickedObj.crashWith(myInivsibleWA) && iterator == 3) {
+          setMidPosition(clickedObj, myInivsibleWA);
+          myInstructions.text = `Step ${iterator + 1}: Drop magnesium on the work area.`;
+
+        }
+        else { //clicked outside the work area
+          if (!clickedObj.isMoved) {
+            restorePosition(clickedObj);
+          }
+          else if (clickedObj.freeToMove) {
+          }
+          else {
+            setMidPosition(clickedObj, myWorkArea);
+          }
+        }
+      }
+    }
+
+    function updateGameArea() {
+      myGameArea.clear();
+      moveObject(clickedObj)
+      updateArr.forEach(comp => comp.update())
+      myInstructions.update();
+    }
+
+    function moveObject(obj) {
+      if ((myGameArea.x && myGameArea.y) && obj.isExpected != null) {
+        obj.x = myGameArea.x
+        obj.y = myGameArea.y;
+        myGameArea.x = null;
+        myGameArea.y = null;
+      }
+    }
+
+    function restorePosition(obj) {
+      obj.x = obj.initialX
+      obj.y = obj.initialY
+      obj.image.src = obj.initialImage
+    }
+
+    function markExpected(contain, val) {
+      updateArr.forEach(comp => {
+        if (comp.contains === contain) {
+          comp.isExpected = val;
+        }
+      })
+    }
+    function stopDrawing(val) {
+      updateArr.splice(updateArr.indexOf(val), 1)
+    }
+
+    function setMidPosition(obj, crashedWith) {
+
+      let midX = crashedWith.x + crashedWith.width / 2;
+      let midY = crashedWith.y + crashedWith.height / 2;
+
+      obj.x = midX - (obj.width / 2);
+      obj.Y = midY - (obj.height / 2);
+
+    }
+
+    function log(curr, prev) {
+      // if (iterator > 0) {
+
+      switch (prev.contains + curr.contains) {
+
+        case mg + separator:
+          setPreviousAttributes(curr, prev);
+          stopDrawing(prev);
+          curr.image.src = 'mgFilterPaper.png'
+          myInstructions.text = `Step ${iterator + 1}: Drag a copper stip on to the Workarea to make a cell.`
+          break;
+
+        case separator + copper:
+
+          stopDrawing(prev);
+          curr.image.src = 'cell.png';
+          curr.contains = cell;
+          if (iterator == 2) {
+            curr.freeToMove = true;
+            myInstructions.text = `Step ${iterator + 1}: Drag the cell and place it on the left of Workarea.`
+          }
+          else {
+            myInstructions.text = `Step ${iterator + 1}: Drag the previously built cell into Workarea to connect it in series with the one in the work area.`
+          }
+          break;
+
+
+        case cell + cell:
+          stopDrawing(prev);
+          curr.image.src = 'battery.png';
+          curr.contains = battery;
+          curr.width = 170;
+          curr.height = 30;
+          myInstructions.text = `Step ${iterator + 1}: Bring the LED closer to the battery to make electric connection.`
+          checkPolarity(curr, myLED)
+          break;
+        case battery + LED:
+
+          stopDrawing(prev);
+          curr.image.src = 'ConnectedLED.png';
+          curr.contains = ConnectedLED;
+          setPreviousAttributes(curr, prev);
+          myInstructions.text = `Step ${iterator + 1}: Drop Citric Acid Solution on the battery to light the LED.`
+
+          break;
+
+        case ConnectedLED + citricAcid:
+          setPreviousAttributes(curr, prev);
+          curr.image.src = 'GlowingLED.png';
+          curr.contains = GlowingLED;
+          stopDrawing(prev);
+          myInstructions.text = `Congratulations! You have made a battery.`
+          break;
+        default: break;
+      }
+
+      // }
+    }
+
+    function setPreviousAttributes(curr, prev) {
+      curr.width = prev.width;
+      curr.height = prev.height;
+      curr.x = prev.x;
+      curr.y = prev.y;
+    }
+
+    function checkPolarity(curr, obj) {
+      // stopDrawing(curr);
+      // setMidPosition(obj, myGameArea);
+      // updateArr.push(curr);
+    }
+
+  </script>
+</body>
+
+</html>
