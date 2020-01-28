@@ -19,7 +19,7 @@
   <script>
     var myComponents = [];
     var updateArr = [];
-    var clickedObj = new component;
+    var clickedObj;
     var ConnectedLED = 'ConnectedLED'
     var GlowingLED = 'GlowingLED'
     var wrappedMg = 'wrappedMg';
@@ -136,7 +136,7 @@
         var otherright = otherobj.x + otherobj.width;
         var othertop = otherobj.y;
         var otherbottom = otherobj.y + otherobj.height;
-        
+
         var crash = true;
 
         if (mybottom < othertop || mytop > otherbottom || myright < otherleft || myleft > otherright) {
@@ -146,6 +146,8 @@
       };
       // myComponents.push(this);
       updateArr.push(this);
+      console.log(this);
+      
     }
 
     function textComponent(size, fontFamily, color, x, y) {
@@ -216,7 +218,6 @@
 
 
     function gameLogic() {
-      console.log(iterator);
 
       if (clickedObj) {
         if (clickedObj.crashWith(myWorkArea)) { //dragged object into work area
@@ -269,9 +270,14 @@
     function updateGameArea() {
       myGameArea.clear();
       moveObject(clickedObj)
-      for(var i=0 ; i< updateArr.length ; i++)
-      updateArr[i].update()
-      // updateArr.forEach(comp => comp.update())
+      // for (var i = 0; i < updateArr.length; i++)
+      updateArr.forEach(comp => {
+        comp.update()
+        // updateArr[i].update()
+        // console.log(comp.contains);
+        // console.log(updateArr[i].contains);
+
+      })
       myInstructions.update();
     }
 
